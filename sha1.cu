@@ -10,9 +10,7 @@
 #include <cstdio>
 #include <cstdint>
 #include <cstring>
-
-// 存储原始消息
-uint32_t mes[64];
+using namespace std;
 
 // 32-bit rotate
 __device__ inline uint32_t ROT(uint32_t x, int n) {
@@ -82,12 +80,16 @@ __device__ inline uint32_t f4(uint32_t x, uint32_t y, uint32_t z) { return (x ^ 
 
 // 初始化消息，附加填充位
 //mes1是前32bit，mes2是后32bit
-__device__ uint64_t getSha1(uint32_t mes1,uint32_t mes2,uint32_t *target)
+__device__ uint64_t getSha1(uint32_t mes1,uint32_t mes2,const uint32_t *target)
 {
-    
+    //printf("hello\n");
+    //uint32_t* mes=(uint32_t*)malloc(sizeof(uint32_t)*64);
+    uint32_t* mes;
+    mes=(uint32_t*)malloc(sizeof(uint32_t)*64);
+
     mes[0] = mes1;
     mes[1] = mes2;
-    mes[2] = 1 << 31;
+    mes[2] = 1U << 31;
     memset(mes + 3, 0, 14 * sizeof(uint32_t));
     mes[15] = 64;
     // for(int i=0;i<16;i++)
@@ -199,30 +201,39 @@ __device__ uint64_t getSha1(uint32_t mes1,uint32_t mes2,uint32_t *target)
     C += I3;
     D += I4;
     E += I5;
+
+    free(mes);
+
+    // for(int i=0;i<5;i++)
+    // {
+    //     printf("%08x",target[i]);
+    // }
+    // printf("\n");
     if(A==target[0]&&B==target[1]&&C==target[2]&&D==target[3]&&E==target[4])
     {
-        return (int64_t)mes1<<32+mes2;
+        return (uint64_t)mes1<<32+mes2;
     }
     else return 0;
-    // printf("%08x%08x%08x%08x%08x",A,B,C,D,E);
 }
 
 //每个block的计算函数：确定消息的前48bit，计算最后2e16bit对应的hash
-__global__ void blockSha1(uint32_t mes1,uint32_t *target,uint64_t* result)
+__global__ void blockSha1(uint32_t mes1,const uint32_t *target,uint64_t* result)
 {
     uint32_t mes2=threadIdx.x+blockIdx.x*blockDim.x;
-    for(int i=0;i<(2<<16);i++)
+    //printf("%d\n",mes2);
+    for(int i=0;i<(1<<16);i++)
     {
-        if(getSha1(mes1,mes2+i,target)!=0)
+        if(getSha1(mes1,mes2<<16+i,target)!=0)
         {
-            *result = (uint64_t)mes1 << 32 + (mes2 + i);
+            *result = (uint64_t)mes1 << 32 + (mes2<<16 + i);
             break;
         }
     }
 }
 
 //start是给定的起始点：前16bit
-void cal(uint32_t start,uint64_t result)
+void cal(uint32_t start,const uint32_t *target,uint64_t* result)
 {
-    blockSha1<<<1,(2<<16)>>>(start,&result);
+    blockSha1<<<(1<<8),(1<<8)>>>(start,target,result);
+    cudaDeviceSynchronize();
 }
