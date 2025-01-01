@@ -110,7 +110,8 @@
         "stop_token": "cpp",
         "syncstream": "cpp",
         "thread": "cpp",
-        "typeindex": "cpp"
+        "typeindex": "cpp",
+        "executor": "cpp"
     },
     "C_Cpp.errorSquiggles": "disabled",
     "C_Cpp.codeAnalysis.clangTidy.args": [

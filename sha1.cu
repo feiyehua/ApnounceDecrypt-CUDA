@@ -10,13 +10,12 @@
 #include <cstdio>
 #include <cstdint>
 #include <cstring>
-#include <chrono>
-#include <iostream>
+
 // 存储原始消息
 uint32_t mes[64];
 
 // 32-bit rotate
-inline uint32_t ROT(uint32_t x, int n) {
+__device__ inline uint32_t ROT(uint32_t x, int n) {
     return ((x << n) | (x >> (32 - n)));
 }
 
@@ -28,16 +27,16 @@ inline uint32_t ROT(uint32_t x, int n) {
 #define I5 3285377520U
 
 // Main loop SHA logical functions f1 to f4
-inline uint32_t f1(uint32_t x, uint32_t y, uint32_t z)
+__device__ inline uint32_t f1(uint32_t x, uint32_t y, uint32_t z)
 {
     return ((x & y) | (~x & z));
 }
-inline uint32_t f2(uint32_t x, uint32_t y, uint32_t z) { return (x ^ y ^ z); }
-inline uint32_t f3(uint32_t x, uint32_t y, uint32_t z)
+__device__ inline uint32_t f2(uint32_t x, uint32_t y, uint32_t z) { return (x ^ y ^ z); }
+__device__ inline uint32_t f3(uint32_t x, uint32_t y, uint32_t z)
 {
     return ((x & y) | (x & z) | (y & z));
 }
-inline uint32_t f4(uint32_t x, uint32_t y, uint32_t z) { return (x ^ y ^ z); }
+__device__ inline uint32_t f4(uint32_t x, uint32_t y, uint32_t z) { return (x ^ y ^ z); }
 
 // Calculation functions for 80 rounds of SHA1
 #define CALC1(i)                                                               \
@@ -83,8 +82,9 @@ inline uint32_t f4(uint32_t x, uint32_t y, uint32_t z) { return (x ^ y ^ z); }
 
 // 初始化消息，附加填充位
 //mes1是前32bit，mes2是后32bit
-void getSha1(uint32_t *mes, uint32_t mes1,uint32_t mes2)
+__device__ uint64_t getSha1(uint32_t mes1,uint32_t mes2,uint32_t *target)
 {
+    
     mes[0] = mes1;
     mes[1] = mes2;
     mes[2] = 1 << 31;
@@ -199,30 +199,30 @@ void getSha1(uint32_t *mes, uint32_t mes1,uint32_t mes2)
     C += I3;
     D += I4;
     E += I5;
-
+    if(A==target[0]&&B==target[1]&&C==target[2]&&D==target[3]&&E==target[4])
+    {
+        return (int64_t)mes1<<32+mes2;
+    }
+    else return 0;
     // printf("%08x%08x%08x%08x%08x",A,B,C,D,E);
 }
 
-class Timer {
-public:
-    Timer() : start_(std::chrono::high_resolution_clock::now()) {}
-
-    ~Timer() {
-        auto end = std::chrono::high_resolution_clock::now();
-        std::chrono::duration<double> elapsed = end - start_;
-        std::cout << "Elapsed time: " << elapsed.count() << " seconds" << std::endl;
-    }
-
-private:
-    std::chrono::time_point<std::chrono::high_resolution_clock> start_;
-};
-
-int main()
+//每个block的计算函数：确定消息的前48bit，计算最后2e16bit对应的hash
+__global__ void blockSha1(uint32_t mes1,uint32_t *target,uint64_t* result)
 {
-    Timer timer;
-    for(uint32_t i=0;i<(1U<<12);i++)
+    uint32_t mes2=threadIdx.x+blockIdx.x*blockDim.x;
+    for(int i=0;i<(2<<16);i++)
     {
-        getSha1(mes,114514,i);
+        if(getSha1(mes1,mes2+i,target)!=0)
+        {
+            *result = (uint64_t)mes1 << 32 + (mes2 + i);
+            break;
+        }
     }
-    // getSha1(mes,1U<<32,1U<<32);
+}
+
+//start是给定的起始点：前16bit
+void cal(uint32_t start,uint64_t result)
+{
+    blockSha1<<<1,(2<<16)>>>(start,&result);
 }
