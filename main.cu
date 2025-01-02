@@ -17,7 +17,7 @@ uint64_t start;
 uint64_t hostResult;
 int main()
 {
-    auto fp=fopen("CurrentProgress.txt","w+");
+    auto fp=fopen("CurrentProgress.txt","r+");
     if(fscanf(fp,"%lu",&start)!=1)
     {
         start=0;
