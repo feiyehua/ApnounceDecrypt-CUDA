@@ -11,7 +11,7 @@
 #include <cstdint>
 #include <cstring>
 using namespace std;
-
+extern __constant__ uint32_t* target;
 // 32-bit rotate
 __device__ inline uint32_t ROT(uint32_t x, int n) {
     return ((x << n) | (x >> (32 - n)));
@@ -84,8 +84,9 @@ __device__ uint64_t getSha1(uint32_t mes1,uint32_t mes2,const uint32_t *target)
 {
     //printf("hello\n");
     //uint32_t* mes=(uint32_t*)malloc(sizeof(uint32_t)*64);
-    uint32_t* mes;
-    mes=(uint32_t*)malloc(sizeof(uint32_t)*64);
+    uint32_t mes[80];
+    // mes = (uint32_t *)malloc(sizeof(uint32_t) * 64);
+    // cudaMalloc(&mes,sizeof(uint32_t)*64);
 
     mes[0] = mes1;
     mes[1] = mes2;
@@ -202,8 +203,9 @@ __device__ uint64_t getSha1(uint32_t mes1,uint32_t mes2,const uint32_t *target)
     D += I4;
     E += I5;
 
-    free(mes);
-
+    // free(mes);
+    // cudaFree(mes);
+    printf("%08x%08x %08x%08x%08x%08x%08x\n",mes1,mes2,A,B,C,D,E);
     // for(int i=0;i<5;i++)
     // {
     //     printf("%08x",target[i]);
@@ -223,9 +225,9 @@ __global__ void blockSha1(uint32_t mes1,const uint32_t *target,uint64_t* result)
     //printf("%d\n",mes2);
     for(int i=0;i<(1<<16);i++)
     {
-        if(getSha1(mes1,mes2<<16+i,target)!=0)
+        if(getSha1(mes1,(mes2<<16)+i,target)!=0)
         {
-            *result = (uint64_t)mes1 << 32 + (mes2<<16 + i);
+            *result = ((uint64_t)mes1 << 32) + (mes2<<16) + i;
             break;
         }
     }
@@ -235,5 +237,12 @@ __global__ void blockSha1(uint32_t mes1,const uint32_t *target,uint64_t* result)
 void cal(uint32_t start,const uint32_t *target,uint64_t* result)
 {
     blockSha1<<<(1<<8),(1<<8)>>>(start,target,result);
+    auto err=cudaGetLastError();
+    if(err!=cudaSuccess)
+    {
+        printf("%s\n",cudaGetErrorString(err));
+        exit(-1);
+    }
     cudaDeviceSynchronize();
+    
 }

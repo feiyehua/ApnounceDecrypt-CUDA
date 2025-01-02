@@ -10,8 +10,8 @@
 #include "timer.hpp"
 #include "sha1.hpp"
 using namespace std;
-uint32_t *target;
-uint32_t hostTarget[5]={0xcb473678,0x976f425d,0x6ec13398,0x38f11011,0x007ad27d};
+// uint32_t *target;
+__constant__ uint32_t target[5]={0xcb473678,0x976f425d,0x6ec13398,0x38f11011,0x007ad27d};
 uint64_t *result;
 uint64_t start;
 uint64_t hostResult;
@@ -23,9 +23,9 @@ int main()
         start=0;
     }
     cudaSetDevice(0);
-    cudaMalloc(&target,sizeof(uint32_t)*5);
+    // cudaMalloc(&target,sizeof(uint32_t)*5);
     cudaMalloc(&result,sizeof(uint64_t));
-    cudaMemcpy(target,hostTarget,sizeof(uint32_t)*5,cudaMemcpyHostToDevice);
+    // cudaMemcpy(target,hostTarget,sizeof(uint32_t)*5,cudaMemcpyHostToDevice);
     for(uint64_t i=start;i<=((uint64_t)1<<32ll);i++)
     {
         cal(i,target,result);
