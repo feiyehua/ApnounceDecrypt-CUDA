@@ -4,27 +4,11 @@
     // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
     "configurations": [
         {
-            "type": "lldb",
+            "name": "CUDA C++: Launch",
+            "type": "cuda-gdb",
             "request": "launch",
-            "name": "Launch",
-            "program": "${fileDirname}/target/${fileBasenameNoExtension}",
-            "args": [],
-            "cwd": "${workspaceFolder}",
-            "preLaunchTask": "C/C++: clang++ build active file"
-
-        },
-        {
-            "name": "C/C++: clang++ build active file",
-            "type": "cppdbg",
-            "request": "launch",
-            "program": "${fileDirname}/target/${fileBasenameNoExtension}",
-            "args": [],
-            "stopAtEntry": false,
-            "cwd": "${fileDirname}",
-            "environment": [],
-            "externalConsole": true,
-            "MIMode": "lldb",
-            "preLaunchTask": "C/C++: clang++ build active file"
+            "program": "${workspaceFolder}/target/sha1.out",
+            "preLaunchTask": "NVCC: nvcc build active file"
         }
     ],
     "version": "2.0.0"

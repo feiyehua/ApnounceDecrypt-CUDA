@@ -2,20 +2,20 @@
     "tasks": [
         {
             "type": "cppbuild",
-            "label": "C/C++: clang++ build active file",
-            "command": "/opt/homebrew/bin/g++-14",
+            "label": "NVCC: nvcc build active file",
+            "command": "nvcc",
             "args": [
-                "-Wall",
-                "-DTEST",
-                "-O0",
-                "--std=c++17",                
                 "-g",
-                "${file}",
+                "-G",
+                "-rdc=true",
+                "-O0",
+                "main.cu",
+                "sha1.cu",
                 "-o",
-                "${fileDirname}/target/${fileBasenameNoExtension}"
+                "target/sha1.out"
             ],
             "options": {
-                "cwd": "${fileDirname}"
+                "cwd": "${workspaceFolder}"
             },
             "problemMatcher": [
                 "$gcc"

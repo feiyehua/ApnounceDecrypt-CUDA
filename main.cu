@@ -11,7 +11,7 @@
 #include "sha1.hpp"
 using namespace std;
 // uint32_t *target;
-__constant__ uint32_t target[5]={0xcb473678,0x976f425d,0x6ec13398,0x38f11011,0x007ad27d};
+__constant__ uint32_t target[5]={0xabc21d3f,0x9d5d98ec,0xae9f3d51,0x44752901,0x71f2bbed};
 uint64_t *result;
 uint64_t start;
 uint64_t hostResult;
@@ -28,13 +28,14 @@ int main()
     // cudaMemcpy(target,hostTarget,sizeof(uint32_t)*5,cudaMemcpyHostToDevice);
     for(uint64_t i=start;i<=((uint64_t)1<<32ll);i++)
     {
-        cal(i,target,result);
-        // cudaMemcpy(&hostResult,result,sizeof(uint64_t),cudaMemcpyDeviceToHost);
-        // if(hostResult!=0)
-        // {
-        //     fprintf(fp,"%lu\n",hostResult);
-        //     return 0;
-        // }
+        cal(i,result);
+        cudaMemcpy(&hostResult,result,sizeof(uint64_t),cudaMemcpyDeviceToHost);
+        if(hostResult!=0)
+        {
+            auto fpResult=fopen("Result.txt","w");
+            fprintf(fpResult,"%lu\n",hostResult);
+            return 0;
+        }
         fseek(fp, 0L, SEEK_SET);
         fprintf(fp,"%lu\n",i);
     }
