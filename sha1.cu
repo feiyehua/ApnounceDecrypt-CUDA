@@ -80,18 +80,23 @@ __device__ inline uint32_t f4(uint32_t x, uint32_t y, uint32_t z) { return (x ^ 
 
 // 初始化消息，附加填充位
 //mes1是前32bit，mes2是后32bit
-__device__ uint64_t getSha1(uint32_t mes1,uint32_t mes2)
+__device__ uint64_t getSha1(uint32_t mes1,uint32_t mes2,uint32_t* mes)
 {
     //printf("hello\n");
     //uint32_t* mes=(uint32_t*)malloc(sizeof(uint32_t)*64);
-    uint32_t mes[80];
+    // uint32_t mes[80];
     // mes = (uint32_t *)malloc(sizeof(uint32_t) * 64);
     // cudaMalloc(&mes,sizeof(uint32_t)*64);
 
     mes[0] = mes1;
     mes[1] = mes2;
     mes[2] = 1U << 31;
-    memset(mes + 3, 0, 14 * sizeof(uint32_t));
+#pragma unroll
+    for (int i = 3; i <= 14; i++)
+    {
+        mes[i] = 0;
+    }
+    // memset(mes + 3, 0, 14 * sizeof(uint32_t));
     mes[15] = 64;
     // for(int i=0;i<16;i++)
     // {
@@ -218,14 +223,14 @@ __device__ uint64_t getSha1(uint32_t mes1,uint32_t mes2)
     else return 0;
 }
 
-//每个block的计算函数：确定消息的前48bit，计算最后2e16bit对应的hash
-__global__ void blockSha1(uint32_t mes1,uint64_t* result)
+//每个block的计算函数：确定消息的前48bit，计算最后16bit对应的hash
+__global__ void blockSha1(uint32_t mes1,uint64_t* result,uint32_t* calcBuffer)
 {
     uint32_t mes2=threadIdx.x+blockIdx.x*blockDim.x;
     //printf("%d\n",mes2);
     for(int i=0;i<(1<<16);i++)
     {
-        if(getSha1(mes1,(mes2<<16)+i)!=0)
+        if(getSha1(mes1,(mes2<<16)+i,calcBuffer+mes2*80)!=0)
         {
             *result = ((uint64_t)mes1 << 32) + (mes2<<16) + i;
             break;
@@ -234,9 +239,9 @@ __global__ void blockSha1(uint32_t mes1,uint64_t* result)
 }
 
 //start是给定的起始点：前16bit
-void cal(uint32_t start,uint64_t* result)
+void cal(uint32_t start,uint64_t* result,uint32_t* calcBuffer)
 {
-    blockSha1<<<(1<<8),(1<<8)>>>(start,result);
+    blockSha1<<<(1<<8),(1<<8)>>>(start,result,calcBuffer);
     // if(*result!=0)
     // {
     //     return;

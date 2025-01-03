@@ -1,7 +1,7 @@
 /*** 
  * @Author       : FeiYehua
  * @Date         : 2025-01-01 12:53:06
- * @LastEditTime : 2025-01-02 20:33:05
+ * @LastEditTime : 2025-01-03 12:34:08
  * @LastEditors  : FeiYehua
  * @Description  : 
  * @FilePath     : sha1.hpp
@@ -9,4 +9,4 @@
  */
 
 
-void cal(uint32_t start,uint64_t* result);
+void cal(uint32_t start,uint64_t* result,uint32_t* calcBuffer);

@@ -15,9 +15,11 @@ __constant__ uint32_t target[5]={0xabc21d3f,0x9d5d98ec,0xae9f3d51,0x44752901,0x7
 uint64_t *result;
 uint64_t start;
 uint64_t hostResult;
+uint32_t* calcBuffer;
 int main()
 {
     auto fp=fopen("CurrentProgress.txt","r+");
+    if(fp==NULL) exit(-1);
     if(fscanf(fp,"%lu",&start)!=1)
     {
         start=0;
@@ -25,10 +27,11 @@ int main()
     cudaSetDevice(0);
     // cudaMalloc(&target,sizeof(uint32_t)*5);
     cudaMalloc(&result,sizeof(uint64_t));
+    cudaMalloc(&calcBuffer,sizeof(uint32_t)*80*(1<<16));
     // cudaMemcpy(target,hostTarget,sizeof(uint32_t)*5,cudaMemcpyHostToDevice);
     for(uint64_t i=start;i<=((uint64_t)1<<32ll);i++)
     {
-        cal(i,result);
+        cal(i,result,calcBuffer);
         cudaMemcpy(&hostResult,result,sizeof(uint64_t),cudaMemcpyDeviceToHost);
         if(hostResult!=0)
         {
