@@ -27,7 +27,7 @@ int main()
     cudaSetDevice(0);
     // cudaMalloc(&target,sizeof(uint32_t)*5);
     cudaMalloc(&result,sizeof(uint64_t));
-    cudaMalloc(&calcBuffer,sizeof(uint32_t)*80*(1<<16));
+    cudaMalloc(&calcBuffer,sizeof(uint32_t)*(1<<7)*(1<<16));
     // cudaMemcpy(target,hostTarget,sizeof(uint32_t)*5,cudaMemcpyHostToDevice);
     for(uint64_t i=start;i<=((uint64_t)1<<32ll);i++)
     {

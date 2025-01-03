@@ -8,7 +8,7 @@
             "type": "cuda-gdb",
             "request": "launch",
             "program": "${workspaceFolder}/target/sha1.out",
-            "preLaunchTask": "NVCC: nvcc build active file",
+            "preLaunchTask": "NVCC: nvcc build debug file",
             "cwd": "${workspaceFolder}"
         }
     ],

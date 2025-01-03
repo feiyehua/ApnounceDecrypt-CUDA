@@ -230,7 +230,7 @@ __global__ void blockSha1(uint32_t mes1,uint64_t* result,uint32_t* calcBuffer)
     //printf("%d\n",mes2);
     for(int i=0;i<(1<<16);i++)
     {
-        if(getSha1(mes1,(mes2<<16)+i,calcBuffer+mes2*80)!=0)
+        if(getSha1(mes1,(mes2<<16)+i,calcBuffer+(mes2<<7))!=0)
         {
             *result = ((uint64_t)mes1 << 32) + (mes2<<16) + i;
             break;
@@ -238,20 +238,34 @@ __global__ void blockSha1(uint32_t mes1,uint64_t* result,uint32_t* calcBuffer)
     }
 }
 
+#ifdef PROFILE
+cudaEvent_t startTime,endTime;
+float elapseTime;
+#endif
 //start是给定的起始点：前16bit
 void cal(uint32_t start,uint64_t* result,uint32_t* calcBuffer)
 {
+#ifdef PROFILE
+    cudaEventCreate(&startTime);
+    cudaEventCreate(&endTime);
+    cudaEventRecord(startTime, 0);
+#endif
     blockSha1<<<(1<<8),(1<<8)>>>(start,result,calcBuffer);
-    // if(*result!=0)
-    // {
-    //     return;
-    // }
+#ifdef PROFILE
+    cudaEventRecord(endTime, 0);
+#endif
+#ifndef PROFILE
+    cudaDeviceSynchronize();
+#endif
+#ifdef PROFILE
+    cudaEventSynchronize(endTime);
+    cudaEventElapsedTime(&elapseTime, startTime, endTime);
+    printf("%f ms\n", elapseTime);
+#endif
     auto err=cudaGetLastError();
     if(err!=cudaSuccess)
     {
         printf("%s\n",cudaGetErrorString(err));
         exit(-1);
     }
-    cudaDeviceSynchronize();
-    
 }
