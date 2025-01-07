@@ -80,11 +80,9 @@ __device__ inline uint32_t f4(uint32_t x, uint32_t y, uint32_t z) { return (x ^ 
 
 // 初始化消息，附加填充位
 //mes1是前32bit，mes2是后32bit
-__device__ uint64_t getSha1(uint32_t mes1,uint32_t mes2,uint32_t* mes)
+__device__ uint64_t getSha1(uint32_t mes1,uint32_t mes2)
 {
-    //printf("hello\n");
-    //uint32_t* mes=(uint32_t*)malloc(sizeof(uint32_t)*64);
-    // uint32_t mes[80];
+    uint32_t mes[80];
     // mes = (uint32_t *)malloc(sizeof(uint32_t) * 64);
     // cudaMalloc(&mes,sizeof(uint32_t)*64);
 
@@ -96,23 +94,14 @@ __device__ uint64_t getSha1(uint32_t mes1,uint32_t mes2,uint32_t* mes)
     {
         mes[i] = 0;
     }
-    // memset(mes + 3, 0, 14 * sizeof(uint32_t));
     mes[15] = 64;
-    // for(int i=0;i<16;i++)
-    // {
-    //     printf("%x\n",mes[i]);
-    // }
+
 #pragma unroll
     for (int i = 16; i < 80; i++)
     {
         mes[i] = ROT((mes[i - 3] ^ mes[i - 8] ^ mes[i - 14] ^ mes[i - 16]), 1);
     }
     uint32_t A,B,C,D,E,temp;
-    A = I1;
-    B = I2;
-    C = I3;
-    D = I4;
-    E = I5;
         // Perform sha calculation
     A = I1;
     B = I2;
@@ -216,21 +205,18 @@ __device__ uint64_t getSha1(uint32_t mes1,uint32_t mes2,uint32_t* mes)
     //     printf("%08x",target[i]);
     // }
     // printf("\n");
-    if(A==target[0]&&B==target[1]&&C==target[2]&&D==target[3]&&E==target[4])
-    {
-        return ((uint64_t)mes1<<32)+mes2;
-    }
-    else return 0;
+    return (A==target[0]&&B==target[1]&&C==target[2]&&D==target[3]&&E==target[4]);
+    
 }
 
 //每个block的计算函数：确定消息的前48bit，计算最后16bit对应的hash
-__global__ void blockSha1(uint32_t mes1,uint64_t* result,uint32_t* calcBuffer)
+__global__ void blockSha1(uint32_t mes1,uint64_t* result)
 {
     uint32_t mes2=threadIdx.x+blockIdx.x*blockDim.x;
     //printf("%d\n",mes2);
     for(int i=0;i<(1<<16);i++)
     {
-        if(getSha1(mes1,(mes2<<16)+i,calcBuffer+(mes2<<7))!=0)
+        if(getSha1(mes1,(mes2<<16)+i)!=0)
         {
             *result = ((uint64_t)mes1 << 32) + (mes2<<16) + i;
             break;
@@ -250,7 +236,7 @@ void cal(uint32_t start,uint64_t* result,uint32_t* calcBuffer)
     cudaEventCreate(&endTime);
     cudaEventRecord(startTime, 0);
 #endif
-    blockSha1<<<(1<<8),(1<<8)>>>(start,result,calcBuffer);
+    blockSha1<<<(1<<8),(1<<8)>>>(start,result);
 #ifdef PROFILE
     cudaEventRecord(endTime, 0);
 #endif
